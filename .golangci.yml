@@ -1,0 +1,14 @@
+linters:
+  disable:
+    - typecheck
+
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - shadow
+      - fieldalignment
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
