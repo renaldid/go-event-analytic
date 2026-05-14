@@ -58,7 +58,7 @@ jobs:
           version: latest
 
       - name: Install n1detect
-        run: go install github.com/renaldid/n1detect@latest
+        run: go install github.com/renaldid/n1detect/cmd/n1detect@latest
 
       - name: Run n1detect
         run: go vet -vettool=$(which n1detect) $(go list ./... | grep -v '/proto')
