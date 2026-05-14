@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    name: Test (Go ${{ matrix.go }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ["1.23", "1.24", "1.25", "1.26"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Test with race detector and coverage
+        run: |
+          pkgs=$(go list ./... | grep -v '/proto' | grep -v '/cmd/')
+          go test -race -coverprofile=coverage.out -covermode=atomic $pkgs
+
+      - name: Verify 100% coverage
+        run: |
+          pct=$(go tool cover -func=coverage.out | grep '^total:' | awk '{print $3}' | tr -d '%')
+          echo "Total coverage: ${pct}%"
+          awk "BEGIN { if ($pct < 100) { print \"Coverage below 100%\"; exit 1 } }"
+
+      - name: Upload coverage report
+        if: matrix.go == '1.26'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.out
+          fail_ci_if_error: false
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+
+      - name: Install n1detect
+        run: go install github.com/renaldid/n1detect@latest
+
+      - name: Run n1detect
+        run: go vet -vettool=$(which n1detect) $(go list ./... | grep -v '/proto')

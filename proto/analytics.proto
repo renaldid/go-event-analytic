@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package analytics;
+
+option go_package = "github.com/renaldid/go-event-analytic/proto;proto";
+
+import "google/protobuf/timestamp.proto";
+
+service EventService {
+  rpc IngestEvent(EventRequest) returns (IngestResponse);
+  rpc IngestEvents(BatchEventRequest) returns (IngestResponse);
+}
+
+message Event {
+  string user_id  = 1;
+  string action   = 2;
+  string category = 3;
+  int32  value    = 4;
+  google.protobuf.Timestamp timestamp = 5;
+}
+
+message EventRequest      { Event event = 1; }
+message BatchEventRequest { repeated Event events = 1; }
+message IngestResponse    { bool success = 1; string message = 2; }
